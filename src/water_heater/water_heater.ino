@@ -36,6 +36,7 @@ void setup(void) {
   heater_four.set_pin(9);
   exit_thermistor.set_pin(A0);
   inlet_thermistor.set_pin(A1);
+  flowmeter.set_pin(13);
   attachInterrupt(0, flow, RISING); // Setup Interrupt
 
 }
@@ -43,46 +44,6 @@ void setup(void) {
 void flow(){ // helper function for interrupt attachment
   flowmeter.flow();
 }
-
-double Compute()
-{
-  double Output;
-   /*How long since we last calculated*/
-   unsigned long now = millis();
-   double timeChange = (double)(now - lastTime);
-
-   /*Compute all the working error variables*/
-   double error = TEMPSETPOINT - Tout;
-   errSum += (error * timeChange);
-   double dErr = (error - lastErr) / timeChange;
-
-   /*Compute PID Output*/
-   Output = kp * error + ki * errSum + kd * dErr;
-
-   /*Remember some variables for next time*/
-   lastErr = error;
-   lastTime = now;
-
-   Serial.print(Tout);
-   Serial.print(", ");
-   Serial.print(error);
-   Serial.print(", ");
-   Serial.print(errSum);
-   Serial.print(", ");
-   Serial.print(dErr);
-   Serial.print(", ");
-   Serial.println(Output);
-   return Output;
-}
-
-
-void SetTunings(double Kp, double Ki, double Kd)
-{
-   kp = Kp;
-   ki = Ki;
-   kd = Kd;
-}
-
 
 int ClassicalMethod(float mdot, float T2){
     // Measure inlet flow rate, set Q
@@ -93,12 +54,6 @@ int ClassicalMethod(float mdot, float T2){
     return Q;
 }
 
-/*
-void adjustment(float T2, float TEMPSETPOINT){
-    float diff = T2 - TEMPSETPOINT;
-    float adj_factor = diff / 1000;
-    return adj_factor;
-}*/
 void safety_check(float Tout){
   if (Tout>MAXTEMP){
     heater_one.set_power(0);
@@ -110,14 +65,18 @@ void loop(void) {
   /* pid_output = Compute(); // compute pid demand */
 
   float Q = ClassicalMethod(flowmeter.flow_rate, TEMPSETPOINT);
-  Serial.print(Q);
 
   Tout = exit_thermistor.get_temperature();
   safety_check(Tout);
-  Serial.print("Flow = ");
+
+  // -- Debug printout --
+  Serial.print("Power = ");
+  Serial.print(Q);
+  Serial.print(", Flow = ");
   Serial.print(flowmeter.flow_rate);
   Serial.print(" , Actual Tout = ");
   Serial.println(Tout);
+  // ---------------------
 
   // Reduce Q during testing
   Q = Q/10;
