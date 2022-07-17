@@ -108,13 +108,15 @@ void safety_check(float Tout){
 
 void loop(void) {
   /* pid_output = Compute(); // compute pid demand */
-  
+
   float Q = ClassicalMethod(flowmeter.flow_rate, TEMPSETPOINT);
   Serial.print(Q);
 
   Tout = exit_thermistor.get_temperature();
   safety_check(Tout);
-  Serial.print(" watts, Actual Tout = ");
+  Serial.print("Flow = ");
+  Serial.print(flowmeter.flow_rate);
+  Serial.print(" , Actual Tout = ");
   Serial.println(Tout);
 
   // Reduce Q during testing
