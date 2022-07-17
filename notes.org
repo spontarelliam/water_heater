@@ -40,7 +40,7 @@ On a very cold day almost 2 heaters are needed.
 * Phase 1 - Monitor
 Monitor all sensors with Arduino
 
-* Phase 2 - Control
+* Phase 2 - Existing Control
 6/19/21 able to turn on the heaters. They are incredibly overpowered. A single heater will overheat the system in 5 seconds. It's difficult to control without a flow sensor at the inlet, allowing the calculation of how much power to input. The Temp sensor at the outlet has enough lag that the heaters will melt the system before it shows the temp. I can see why they had such a hard time with low flow. I'm not sure it's solvable without a flow meter at the inlet.
 6/21/21 did more pid tuning today. No amount of tuning is going to make up for the lag between heater and thermistor in a low flow condition. Need a flow sensor.
 
@@ -53,3 +53,18 @@ flow sensor
 
 https://www.homedepot.com/p/Everbilt-3-4-in-x-1-2-in-Copper-Pressure-Fitting-x-Cup-Reducer-C6002HD3412/100343698
 https://www.homedepot.com/p/Everbilt-1-2-in-Copper-Pressure-Cup-x-FIP-Female-Adapter-Fitting-C603HD12/100344660
+* Arduino Circuit
+A0 - exit thermistor
+A1 - inlet thermistor
+D13 - Flow meter
+9 - Heater 4
+6 - Heater 3
+5 - Heater 2
+3 - Heater 1
+
+** Software plan
+There may not be a need for PID control as there is very little lag between input and output.
+Q = m x cp x dT
+
+1. Measure Tout
+2. Set power

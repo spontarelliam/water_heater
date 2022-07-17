@@ -14,12 +14,15 @@ double kp, ki, kd;
 File myFile;
 double pid_output;
 
+int demand;
+
 Heater heater_one;
 Heater heater_two;
 Heater heater_three;
 Heater heater_four;
 
-Thermistor thermistor;
+Thermistor exit_thermistor;
+Thermistor inlet_thermistor;
 FlowMeter flowmeter;
 
 
@@ -32,22 +35,11 @@ void setup(void) {
   heater_two.set_pin(5);
   heater_three.set_pin(6);
   heater_four.set_pin(9);
-  thermistor.set_pin(A0);
+  exit_thermistor.set_pin(A0);
+  inlet_thermistor.set_pin(A1);
   attachInterrupt(0, flow, RISING); // Setup Interrupt
 
   Serial.print("Initializing SD card...");
-  if (!SD.begin(10)) {
-    Serial.println("initialization failed!");
-    while (1);
-  }
-  Serial.println("initialization done.");
-
-  myFile = SD.open("temps.log", FILE_WRITE);
-  if (myFile) {
-    myFile.println("");
-    myFile.println("-------  New  ---------");
-    myFile.close();
-  }
 
 }
 
@@ -112,7 +104,7 @@ void adjustment(float T2, float TEMPSETPOINT){
 
 void loop(void) {
 
-  Tout = thermistor.get_temperature();
+  Tout = exit_thermistor.get_temperature();
 
   heater_one.append_temp(Tout);
   heater_two.append_temp(Tout);
@@ -124,6 +116,24 @@ void loop(void) {
   Serial.print(Q);
   Serial.print(" watts, Actual Tout = ");
   Serial.println(Tout);
+
+  // Reduce Q during testing
+  Q = Q/10;
+
+  if (Q < 5500){
+      heater_one.set_power(Q);
+      heater_two.set_power(0);
+  }
+  else if (Q >= 5500 && Q < 11000){
+      heater_one.set_power(Q / 2);
+      heater_two.set_power(Q / 2);
+  }
+
+  // Report heater power
+  Serial.print(heater_one.get_power());
+  Serial.print(", ");
+  Serial.println(heater_two.get_power());
+
 
 
 
@@ -180,7 +190,7 @@ void loop(void) {
 
   /*   delay(10000); */
   /* } */
-  /* if (thermistor.temp > MAXTEMP){ */
+  /* if (exit_thermistor.temp > MAXTEMP){ */
   /*   Serial.println("WARNING temperature has exceeded maximum"); */
   /*   heater_one.set_power(0); */
   /*   heater_two.set_power(0); */
@@ -201,7 +211,7 @@ void loop(void) {
   /*   myFile.print(", "); */
   /*   myFile.print(pid_output); */
   /*   myFile.print(", "); */
-  /*   myFile.print(thermistor.temp); */
+  /*   myFile.print(exit_thermistor.temp); */
   /*   myFile.print(", "); */
   /*   myFile.print(heater_one.power); */
   /*   myFile.print(", "); */
@@ -215,7 +225,7 @@ void loop(void) {
 
   /*   Serial.print(pid_output); */
   /*   Serial.print(", F="); */
-  /*   Serial.print(thermistor.temp); */
+  /*   Serial.print(exit_thermistor.temp); */
   /*   Serial.print(", "); */
   /*   myFile.print(heater_one.power); */
   /*   myFile.print(", "); */
@@ -233,5 +243,5 @@ void loop(void) {
   /*   myFile.print(", "); */
   /*   myFile.println(heater_four.get_time_on()); */
 
-  delay(300);
+  delay(100);
 }

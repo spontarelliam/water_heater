@@ -47,10 +47,13 @@ class Heater {       // The class
       pinMode(PIN, OUTPUT);
     }
 
-    void set_power(int setpoint){
+    void set_power(int watts){
+        // set power in Watts
+      power = watts;
+      int setpoint = map(watts, 0, 5500, 0, 255);
       setpoint = min(setpoint, 255);
       analogWrite(PIN, setpoint);
-      power = map(setpoint, 0, 255, 0, 5000);
+
 
       if (power > 0){
         // heater just turned on from off
