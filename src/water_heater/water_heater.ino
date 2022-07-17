@@ -1,7 +1,7 @@
 // Reprogramming of SETS water heater
 
 #include <SPI.h>
-#include <SD.h>
+//#include <SD.h>
 #include "water_heater.h"
 
 #define MAXTEMP 140
@@ -11,7 +11,6 @@ float Tout;
 unsigned long lastTime;
 double errSum, lastErr;
 double kp, ki, kd;
-File myFile;
 double pid_output;
 
 int demand;
@@ -38,8 +37,6 @@ void setup(void) {
   exit_thermistor.set_pin(A0);
   inlet_thermistor.set_pin(A1);
   attachInterrupt(0, flow, RISING); // Setup Interrupt
-
-  Serial.print("Initializing SD card...");
 
 }
 
@@ -87,7 +84,7 @@ void SetTunings(double Kp, double Ki, double Kd)
 }
 
 
-void ClassicalMethod(float mdot, float T2){
+int ClassicalMethod(float mdot, float T2){
     // Measure inlet flow rate, set Q
     // Q = m x cp x (T2 - T1)
     float cp = 4.18; // kJ / kg * K
@@ -96,24 +93,27 @@ void ClassicalMethod(float mdot, float T2){
     return Q;
 }
 
+/*
 void adjustment(float T2, float TEMPSETPOINT){
     float diff = T2 - TEMPSETPOINT;
     float adj_factor = diff / 1000;
     return adj_factor;
+}*/
+void safety_check(float Tout){
+  if (Tout>MAXTEMP){
+    heater_one.set_power(0);
+    heater_two.set_power(0);
+  }
 }
 
 void loop(void) {
-
-  Tout = exit_thermistor.get_temperature();
-
-  heater_one.append_temp(Tout);
-  heater_two.append_temp(Tout);
-  heater_three.append_temp(Tout);
-  heater_four.append_temp(Tout);
-
   /* pid_output = Compute(); // compute pid demand */
+  
   float Q = ClassicalMethod(flowmeter.flow_rate, TEMPSETPOINT);
   Serial.print(Q);
+
+  Tout = exit_thermistor.get_temperature();
+  safety_check(Tout);
   Serial.print(" watts, Actual Tout = ");
   Serial.println(Tout);
 
