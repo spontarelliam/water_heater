@@ -1,7 +1,7 @@
 class FlowMeter{
 public:
     int PIN;
-    float flow_rate = 0;
+    float flow_rate = 0; // kg/s
     float l_hour;
     volatile int flow_frequency; // Measures flow sensor pulsesunsigned
     unsigned long currentTime;
@@ -25,8 +25,10 @@ public:
             // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
             l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
             flow_frequency = 0; // Reset Counter
-            Serial.print(l_hour, DEC); // Print litres/hour
-            Serial.println(" L/hour");
+            //Serial.print(l_hour, DEC); // Print litres/hour
+            //Serial.println(" L/hour");
+            int rho = 997; // kg/m3  1L = .001m3
+            flow_rate = l_hour / 1000 * rho / 3600; // kg/s
         }
     }
 };
@@ -117,7 +119,8 @@ class Thermistor{
     float steinhart;
     // take N samples in a row, with a slight delay
     for (int i=0; i< NUMSAMPLES; i++) {
-      samples[i] = 1023-analogRead(PIN);
+      //samples[i] = 1023-analogRead(PIN);
+      samples[i] = analogRead(PIN);
       delay(10);
     }
     // average all the samples out
@@ -138,7 +141,8 @@ class Thermistor{
     steinhart = 1.0 / steinhart;                 // Invert
     steinhart -= 273.15;                         // convert absolute temp to C
 
-    temp = steinhart * 1.8 + 32;
-    return temp;
+    float tempc = steinhart;
+    float tempf = steinhart * 1.8 + 32;
+    return tempc;
   }
 };

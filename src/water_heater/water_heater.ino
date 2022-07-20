@@ -3,11 +3,22 @@
 #include <SPI.h>
 //#include <SD.h>
 #include "water_heater.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
+#define ONE_WIRE_BUS 4
 #define MAXTEMP 140
 #define TEMPSETPOINT 100
 
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature sensors(&oneWire);
+
 float Tout;
+float Tin;
+float Tout2;
 unsigned long lastTime;
 double errSum, lastErr;
 double kp, ki, kd;
@@ -27,74 +38,88 @@ FlowMeter flowmeter;
 
 void setup(void) {
   Serial.begin(9600);
-  analogReference(EXTERNAL);
-  SetTunings(850, 0.1, 0.1);
 
   heater_one.set_pin(3);
   heater_two.set_pin(5);
   heater_three.set_pin(6);
   heater_four.set_pin(9);
   exit_thermistor.set_pin(A0);
-  inlet_thermistor.set_pin(A1);
-  flowmeter.set_pin(13);
-  attachInterrupt(0, flow, RISING); // Setup Interrupt
-
+  flowmeter.set_pin(2);
+  attachInterrupt(0, flow, RISING); // Setup Interrupt attach to flow function
+  sensors.begin();
 }
 
 void flow(){ // helper function for interrupt attachment
   flowmeter.flow();
 }
 
-int ClassicalMethod(float mdot, float T2){
+int ClassicalMethod(float mdot, float T1, float T2){
     // Measure inlet flow rate, set Q
     // Q = m x cp x (T2 - T1)
-    float cp = 4.18; // kJ / kg * K
-    float T1 = 13; // Celsius.  no measurement currently, assuming temp
-    float Q = mdot * cp * (T2 - T1);
+    float cp = 4180; // J / kg * K
+    float Q = mdot * cp * (T2 - T1); 
     return Q;
 }
 
 void safety_check(float Tout){
-  if (Tout>MAXTEMP){
+  float Tout_F = Tout * 1.8 + 32;
+  if (Tout_F >MAXTEMP){
+    Serial.println("WARNING: Temp above limit, powering off");
     heater_one.set_power(0);
     heater_two.set_power(0);
+    heater_three.set_power(0);
+    heater_four.set_power(0);
+    delay(2000);
   }
 }
 
 void loop(void) {
-  /* pid_output = Compute(); // compute pid demand */
 
-  float Q = ClassicalMethod(flowmeter.flow_rate, TEMPSETPOINT);
-
+  // Take measurements
   Tout = exit_thermistor.get_temperature();
-  safety_check(Tout);
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  Tin = sensors.getTempCByIndex(0);
+  
+  /* pid_output = Compute(); // compute pid demand */
+  flowmeter.calc_flow_rate();
+
+  float T_setpt_C = (TEMPSETPOINT - 32) / 1.8;
+  float Q = ClassicalMethod(flowmeter.flow_rate, Tin, T_setpt_C);
+
 
   // -- Debug printout --
   Serial.print("Power = ");
   Serial.print(Q);
   Serial.print(", Flow = ");
   Serial.print(flowmeter.flow_rate);
+  Serial.print(" , Tin = ");
+  Serial.print(Tin);
   Serial.print(" , Actual Tout = ");
   Serial.println(Tout);
   // ---------------------
 
-  // Reduce Q during testing
-  Q = Q/10;
+  safety_check(Tout);
 
-  if (Q < 5500){
-      heater_one.set_power(Q);
+  if (Q<=50){
+    heater_one.set_power(0);
       heater_two.set_power(0);
+      heater_three.set_power(0);
+      heater_four.set_power(0);
   }
-  else if (Q >= 5500 && Q < 11000){
-      heater_one.set_power(Q / 2);
-      heater_two.set_power(Q / 2);
+  else if (Q>50){
+      heater_one.set_power(Q/4);
+      heater_two.set_power(Q/4);
+      heater_three.set_power(Q/4);
+      heater_four.set_power(Q/4);
   }
 
+/*
   // Report heater power
+  Serial.print("Heater power: ");
   Serial.print(heater_one.get_power());
   Serial.print(", ");
   Serial.println(heater_two.get_power());
-
+*/
 
 
 

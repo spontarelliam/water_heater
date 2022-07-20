@@ -7,7 +7,7 @@ Adaptation Courtesy: www.hobbytronics.co.uk
 volatile int flow_frequency; // Measures flow sensor pulsesunsigned 
 
 int l_hour; // Calculated litres/hour
-unsigned char flowsensor = 13; // Sensor Input
+int flowsensor = 2; // Sensor Input
 unsigned long currentTime;
 unsigned long cloopTime;
 
