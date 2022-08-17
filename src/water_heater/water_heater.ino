@@ -39,6 +39,10 @@ FlowMeter flowmeter;
 void setup(void) {
   Serial.begin(9600);
 
+  TCCR2B = TCCR2B & B11111000 | B00000010; // for PWM frequency of 3921.16 Hz on pins 3 and 11
+  TCCR0B = TCCR0B & B11111000 | B00000010; // for PWM frequency of 7812.50 Hz on pins 5 and 6
+  TCCR1B = TCCR1B & B11111000 | B00000010; // for PWM frequency of 3921.16 Hz on pins 9 and 10
+
   heater_one.set_pin(3);
   heater_two.set_pin(5);
   heater_three.set_pin(6);
@@ -123,111 +127,6 @@ void loop(void) {
 
 
 
-  /*  if (pid_output >= 100000){ // All on */
-  /*      int  demand = map(pid_output, 100000, 200000, 0, 255); */
-  /*      heater_one.set_power(demand); */
-  /*      heater_two.set_power(demand); */
-  /*      heater_three.set_power(demand); */
-  /*      heater_four.set_power(demand); */
-  /*  } */
-  /*  else if (pid_output < 100000 && pid_output >= 50000){ */
-  /*      int  demand = map(pid_output, 50000, 100000, 0, 255); */
-  /*      heater_one.set_power(demand); */
-  /*      heater_two.set_power(demand); */
-  /*      heater_three.set_power(demand); */
-  /*      heater_four.set_power(0); */
-  /*  } */
-  /*   else if (pid_output < 50000 && pid_output >= 25000){ */
-  /*      int  demand = map(pid_output, 25000, 50000, 0, 255); */
-  /*      heater_one.set_power(demand); */
-  /*      heater_two.set_power(demand); */
-  /*      heater_three.set_power(0); */
-  /*      heater_four.set_power(0); */
-  /*  } */
-  /*  else if (pid_output < 25000 && pid_output >= 1000){ */
-  /*      int  demand = map(pid_output, 1000, 25000, 0, 255); */
-  /*      heater_one.set_power(demand); */
-  /*      heater_two.set_power(0); */
-  /*      heater_three.set_power(0); */
-  /*      heater_four.set_power(0); */
-  /*  } */
-  /*  else if (pid_output < 1000 && pid_output >= 0){ */
-  /*    heater_one.set_power(0); */
-  /*    heater_two.set_power(0); */
-  /*    heater_three.set_power(0); */
-  /*    heater_four.set_power(0); */
-  /*  } */
-  /*  else{ */
-  /*      Serial.println("OVERHEATED: All off"); */
-  /*      heater_one.set_power(0); */
-  /*      heater_two.set_power(0); */
-  /*      heater_three.set_power(0); */
-  /*      heater_four.set_power(0); */
-  /*  } */
-
-
-  /* if (heater_one.get_time_on() >= 3000 and heater_one.rate < 1){ */
-  /*   Serial.println("WARNING heat on but Tout not increasing"); */
-
-  /*   heater_one.set_power(0); */
-  /*   heater_two.set_power(0); */
-  /*   heater_three.set_power(0); */
-  /*   heater_four.set_power(0); */
-
-  /*   delay(10000); */
-  /* } */
-  /* if (exit_thermistor.temp > MAXTEMP){ */
-  /*   Serial.println("WARNING temperature has exceeded maximum"); */
-  /*   heater_one.set_power(0); */
-  /*   heater_two.set_power(0); */
-  /*   heater_three.set_power(0); */
-  /*   heater_four.set_power(0); */
-  /*   delay(10000); */
-  /* } */
-  /* // if no demand, reset PID errors */
-  /* if (heater_one.power == 0){ */
-  /*   errSum = 0; */
-  /* } */
-
-
-
-  /* myFile = SD.open("temps.log", FILE_WRITE); */
-  /* if (myFile) { */
-  /*   myFile.print(millis()); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(pid_output); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(exit_thermistor.temp); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_one.power); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_two.power); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_three.power); */
-  /*   myFile.print(", "); */
-  /*   myFile.println(heater_four.power); */
-  /*   myFile.close(); */
-  /* } */
-
-  /*   Serial.print(pid_output); */
-  /*   Serial.print(", F="); */
-  /*   Serial.print(exit_thermistor.temp); */
-  /*   Serial.print(", "); */
-  /*   myFile.print(heater_one.power); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_two.power); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_three.power); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_four.power); */
-  /*   Serial.print(", "); */
-  /*   myFile.print(heater_one.get_time_on()); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_two.get_time_on()); */
-  /*   myFile.print(", "); */
-  /*   myFile.print(heater_three.get_time_on()); */
-  /*   myFile.print(", "); */
-  /*   myFile.println(heater_four.get_time_on()); */
 
   delay(100);
 }
