@@ -9,6 +9,7 @@
 #define ONE_WIRE_BUS 4
 #define MAXTEMP 140
 #define TEMPSETPOINT 95
+#define FUDGEFACTOR 0.6
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
@@ -61,7 +62,7 @@ int ClassicalMethod(float mdot, float T1, float T2){
     // Measure inlet flow rate, set Q
     // Q = m x cp x (T2 - T1)
     float cp = 4180; // J / kg * K
-    float Q = mdot * cp * (T2 - T1); 
+    float Q = FUDGEFACTOR * mdot * cp * (T2 - T1); 
     return Q;
 }
 
