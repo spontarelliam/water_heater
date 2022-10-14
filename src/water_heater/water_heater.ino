@@ -5,27 +5,28 @@
 #include "water_heater.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <PID_v1.h>
 
 #define ONE_WIRE_BUS 4
 #define MAXTEMP 140
-#define TEMPSETPOINT 95
+#define TEMPSETPOINT 95 // 35C = 95F
 #define FUDGEFACTOR 0.3
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
 
-// Pass our oneWire reference to Dallas Temperature. 
+// Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-float Tout;
+float Tout; // thermistor
 float Tin;
-float Tout2;
+float Tout2; // digital temp sensor
 unsigned long lastTime;
-double errSum, lastErr;
-double kp, ki, kd;
-double pid_output;
+float Q;
 
-int demand;
+//Specify the links and initial tuning parameters
+double Kp=2, Ki=5, Kd=1;
+PID myPID(&Tout, &Q, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
 
 Heater heater_one;
 Heater heater_two;
@@ -52,6 +53,7 @@ void setup(void) {
   flowmeter.set_pin(2);
   attachInterrupt(0, flow, RISING); // Setup Interrupt attach to flow function
   sensors.begin();
+
 }
 
 void flow(){ // helper function for interrupt attachment
@@ -65,10 +67,17 @@ int ClassicalMethod(float mdot, float T1, float T2){
     float Cf = max(1 - (mdot / 0.05), 0.2);
     Cf = min(Cf, 0.7);
     Cf = 0.4;
-    float Q = Cf * mdot * cp * (T2 - T1); 
+    float q = Cf * mdot * cp * (T2 - T1);
     //Serial.println(Cf);
-    return Q;
+    return q;
 }
+
+void PID_method(){
+input = Tout
+    setpoint = 35
+    output = power
+}
+
 
 bool safety_check(float Tout){
   float Tout_F = Tout * 1.8 + 32;
@@ -84,20 +93,21 @@ bool safety_check(float Tout){
   return true;
 }
 
+
 void loop(void) {
 
   // Take measurements
   Tout = exit_thermistor.get_temperature();
   sensors.requestTemperatures(); // Send the command to get temperatures
   Tin = sensors.getTempCByIndex(0);
-  
-  /* pid_output = Compute(); // compute pid demand */
+
   flowmeter.calc_flow_rate();
 
   float T_setpt_C = (TEMPSETPOINT - 32) / 1.8;
-  float Q = ClassicalMethod(flowmeter.flow_rate, Tin, T_setpt_C);
+  /* Q = ClassicalMethod(flowmeter.flow_rate, Tin, T_setpt_C); */
+  myPID.Compute();
 
-  
+
   // -- Debug printout --
   Serial.print("Power = ");
   Serial.print(Q);
@@ -109,7 +119,7 @@ void loop(void) {
   Serial.println(Tout);
   // ---------------------
 
-  
+
   if (safety_check(Tout) == true){
     if (Q<=50){
       heater_one.set_power(0);
@@ -124,7 +134,7 @@ void loop(void) {
         heater_four.set_power(Q/4);
     }
   }
-  
+
 
 
   // Report heater power
