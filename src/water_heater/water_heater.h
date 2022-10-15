@@ -114,7 +114,7 @@ class Thermistor{
   }
 
   float get_temperature(){
-    int NUMSAMPLES = 5;
+    int NUMSAMPLES = 3;
     int samples[NUMSAMPLES];
     float average = 0;
     float steinhart;
@@ -144,6 +144,6 @@ class Thermistor{
 
     float tempc = steinhart;
     float tempf = steinhart * 1.8 + 32;
-    return tempc;
+    return tempf;
   }
 };
