@@ -6,6 +6,9 @@ My plan is to replace the control circuit with my own Arduino.
 4 5500W heating elements - RC03205524 (https://hdsupplysolutions.com/p/apcom-electric-water-heater-element-240-volt-5-500-watts-p208702)
 4 thermostatic switches - NGT L50 434812 6A06 (https://www.wbparts.com/rfq/5930-01-605-2892.html)
 4 thyristors - Q6040J7 stays on after gate current removed (https://www.littelfuse.com/~/media/electronics/datasheets/switching_thyristors/littelfuse_thyristor_qxx40xx_datasheet.pdf.pdf)
+** flow meter - YFB6
+Flow meter from Seeed Studio. Initial testing shows undermeasurement by 60 - 80%. Division by 7.5 factor is likely the culprit. Most use a value of 6.6 or 11, but I'm going to find correct value by experiment.
+
 ** 4 Optoisolators - MOC3062 605Q (https://pdf1.alldatasheet.com/datasheet-pdf/view/5042/MOTOROLA/MOC3062.html)
 pin 1 is input pin.
 
