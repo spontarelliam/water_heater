@@ -54,7 +54,7 @@ class Heater {       // The class
       power = watts;
       int setpoint = map(watts, 0, 5500, 0, 255);
       setpoint = min(setpoint, 255);
-      Serial.println(setpoint);
+      //Serial.println(setpoint);
       analogWrite(PIN, setpoint);
 
 
@@ -114,7 +114,7 @@ class Thermistor{
   }
 
   float get_temperature(){
-    int NUMSAMPLES = 3;
+    int NUMSAMPLES = 5;
     int samples[NUMSAMPLES];
     float average = 0;
     float steinhart;

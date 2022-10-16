@@ -70,11 +70,11 @@ int ClassicalMethod(float mdot, float T1, float T2){
     // Measure inlet flow rate, set Q
     // Q = m x cp x (T2 - T1)
     float cp = 4180; // J / kg * K
-    float Cf = max(1 - (mdot / 0.05), 0.2);
-    Cf = min(Cf, 0.7);
+    float Cf = max(1 - (mdot / 0.05), 0.05);
+    Cf = min(Cf, 0.5);
     Cf = 0.3;
     float q = Cf * mdot * cp * (T2 - T1);
-    //Serial.println(Cf);
+    Serial.println(Cf);
     return q;
 }
 
@@ -104,10 +104,11 @@ void loop(void) {
   flowmeter.calc_flow_rate();
 
  
-  /* Q = ClassicalMethod(flowmeter.flow_rate, Tin, TEMPSETPOINT); */
+  Q = ClassicalMethod(flowmeter.flow_rate, Tin, TEMPSETPOINT);
+  /*
   if (flowmeter.flow_rate > 0.001){
     myPID.Compute();
-  }
+  }*/
 
   // -- Debug printout --
   Serial.print("Time (ms) = ");
@@ -159,5 +160,5 @@ void loop(void) {
 
 
 
-  delay(100);
+  delay(200);
 }
