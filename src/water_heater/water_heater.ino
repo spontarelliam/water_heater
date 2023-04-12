@@ -1,3 +1,4 @@
+
 // Reprogramming of SETS water heater
 
 #include <SPI.h>
@@ -17,16 +18,20 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-double TEMPSETPOINT = 120; // F
+double TEMPSETPOINT = 118; // F 118 summer
 double Tin;
 double Tout; // thermistor
 double Tout2; // digital temp sensor
 unsigned long lastTime;
 double Q;
+float Cf = 0.3; //.1 too low, .25 too high
+double PID_adj = 1.0;
+float last_loop = 0;
+
 
 //Specify the links and initial tuning parameters
-double Kp=16.5, Ki=1.0, Kd=220;
-PID myPID(&Tout, &Q, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
+double Kp=30, Ki=1.0, Kd=40;
+PID myPID(&Tout, &PID_adj, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
 
 Heater heater_one;
 Heater heater_two;
@@ -40,11 +45,11 @@ FlowMeter flowmeter;
 void setup(void) {
   Serial.begin(9600);
   
-
+/*
   TCCR2B = TCCR2B & B11111000 | B00000010; // for PWM frequency of 3921.16 Hz on pins 3 and 11
   TCCR0B = TCCR0B & B11111000 | B00000010; // for PWM frequency of 7812.50 Hz on pins 5 and 6
   TCCR1B = TCCR1B & B11111000 | B00000010; // for PWM frequency of 3921.16 Hz on pins 9 and 10
-
+*/
   heater_one.set_pin(3);
   heater_two.set_pin(5);
   heater_three.set_pin(6);
@@ -55,7 +60,7 @@ void setup(void) {
   sensors.begin();
 
   myPID.SetMode(AUTOMATIC);
-  myPID.SetOutputLimits(0, 5000);
+  myPID.SetOutputLimits(0.5, 2.0);
 
 }
 
@@ -70,11 +75,21 @@ int ClassicalMethod(float mdot, float T1, float T2){
     // Measure inlet flow rate, set Q
     // Q = m x cp x (T2 - T1)
     float cp = 4180; // J / kg * K
-    float Cf = max(1 - (mdot / 0.05), 0.05);
-    Cf = min(Cf, 0.5);
-    Cf = 0.3;
-    float q = Cf * mdot * cp * (T2 - T1);
-    Serial.println(Cf);
+    
+    float q = PID_adj * Cf * mdot * cp * (T2 - T1);
+
+    Serial.print("q = ");
+    Serial.print(q);
+    Serial.print(", PID_adj = ");
+    Serial.print(PID_adj);
+    Serial.print(", Cf = ");
+    Serial.print(Cf);
+    Serial.print(", mdot = ");
+    Serial.print(mdot);
+    Serial.print(", T1 = ");
+    Serial.print(T1);
+    Serial.print(", T2 = ");
+    Serial.println(T2);
     return q;
 }
 
@@ -86,7 +101,9 @@ bool safety_check(float Tout){
     heater_two.set_power(0);
     heater_three.set_power(0);
     heater_four.set_power(0);
-    delay(2000);
+    delay(5000);
+    // Inhibit correction factor further
+    Cf = Cf * 0.95;
     return false;
   }
   return true;
@@ -94,6 +111,10 @@ bool safety_check(float Tout){
 
 
 void loop(void) {
+
+  if (millis() - last_loop > 1000){ // Loop every 1 sec
+      last_loop = millis();
+
 
   // Take measurements
   Tout = exit_thermistor.get_temperature();
@@ -105,10 +126,16 @@ void loop(void) {
 
  
   Q = ClassicalMethod(flowmeter.flow_rate, Tin, TEMPSETPOINT);
-  /*
+  
   if (flowmeter.flow_rate > 0.001){
     myPID.Compute();
-  }*/
+  }
+  Serial.print("PID values = ");
+    Serial.print(Kp);
+    Serial.print(" ");
+    Serial.print(Ki);
+    Serial.print(" ");
+    Serial.println(Kd);
 
   // -- Debug printout --
   Serial.print("Time (ms) = ");
@@ -124,13 +151,7 @@ void loop(void) {
   Serial.print(" , Tout2 = ");
   Serial.println(Tout2);
   // ---------------------
-  Serial.print("PID values = ");
-  Serial.print(Kp);
-  Serial.print(" ");
-  Serial.print(Ki);
-  Serial.print(" ");
-  Serial.println(Kd);
-  //-----------------------------
+
 
 
   if (safety_check(Tout) == true){
@@ -158,7 +179,7 @@ void loop(void) {
 
 
 
+    
+  }
 
-
-  delay(200);
 }
