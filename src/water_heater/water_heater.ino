@@ -7,9 +7,21 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <PID_v1.h>
+#include "Adafruit_MAX31855.h"
+
+// Default connection is using software SPI, but comment and uncomment one of
+// the two examples below to switch between software SPI and hardware SPI:
+
+// Example creating a thermocouple instance with software SPI on any three
+// digital IO pins.
+#define MAXDO   4
+#define MAXCS   7
+#define MAXCLK  8
+
+
 
 #define ONE_WIRE_BUS 4
-#define MAXTEMP 150
+#define MAXTEMP 135
 #define FUDGEFACTOR 0.3
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -18,20 +30,24 @@ OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature.
 DallasTemperature sensors(&oneWire);
 
-double TEMPSETPOINT = 118; // F 118 summer
+// initialize the Thermocouple
+Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
+
+double TEMPSETPOINT = 106; 
 double Tin;
 double Tout; // thermistor
-double Tout2; // digital temp sensor
+double Tout2; // thermocouple
 unsigned long lastTime;
 double Q;
-float Cf = 0.3; //.1 too low, .25 too high
 double PID_adj = 1.0;
 float last_loop = 0;
 
 
 //Specify the links and initial tuning parameters
-double Kp=30, Ki=1.0, Kd=40;
-PID myPID(&Tout, &PID_adj, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
+//double Kp=30, Ki=1.0, Kd=40; // thermistor
+//double Kp=5, Ki=0.1, Kd=30;
+double Kp=1, Ki=0.1, Kd=200;
+PID myPID(&Tout2, &PID_adj, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
 
 Heater heater_one;
 Heater heater_two;
@@ -57,38 +73,48 @@ void setup(void) {
   exit_thermistor.set_pin(A0);
   flowmeter.set_pin(2);
   attachInterrupt(0, flow, RISING); // Setup Interrupt attach to flow function
+
+
+    delay(500);
+  Serial.print("Initializing sensor...");
+  if (!thermocouple.begin()) {
+    Serial.println("ERROR.");
+    while (1) delay(10);
+  }
+
   sensors.begin();
 
   myPID.SetMode(AUTOMATIC);
-  myPID.SetOutputLimits(0.5, 2.0);
-
+  myPID.SetOutputLimits(0.1, 2.0);
+  
 }
 
 void flow(){ // helper function for interrupt attachment
   flowmeter.flow();
 }
 
-int ClassicalMethod(float mdot, float T1, float T2){
+
+long ClassicalMethod(float mdot, float T1, float T2){
     // Calculate Q in watts
-    T1 = (T1 - 32) / 1.8;
-    T2 = (T2 - 32) / 1.8;
+    T1 = (T1 - 32) / 1.8; // Celsius
+    T2 = (T2 - 32) / 1.8; // Celsius
     // Measure inlet flow rate, set Q
     // Q = m x cp x (T2 - T1)
     float cp = 4180; // J / kg * K
     
-    float q = PID_adj * Cf * mdot * cp * (T2 - T1);
+    float q = PID_adj * mdot * cp * (T2 - T1);
 
     Serial.print("q = ");
     Serial.print(q);
     Serial.print(", PID_adj = ");
     Serial.print(PID_adj);
-    Serial.print(", Cf = ");
-    Serial.print(Cf);
+    Serial.print(", therm code: ");
+    Serial.print(thermocouple.readError());
     Serial.print(", mdot = ");
     Serial.print(mdot);
     Serial.print(", T1 = ");
     Serial.print(T1);
-    Serial.print(", T2 = ");
+    Serial.print(", Tsetpt = ");
     Serial.println(T2);
     return q;
 }
@@ -101,9 +127,8 @@ bool safety_check(float Tout){
     heater_two.set_power(0);
     heater_three.set_power(0);
     heater_four.set_power(0);
-    delay(5000);
+    delay(3000);
     // Inhibit correction factor further
-    Cf = Cf * 0.95;
     return false;
   }
   return true;
@@ -112,15 +137,14 @@ bool safety_check(float Tout){
 
 void loop(void) {
 
-  if (millis() - last_loop > 1000){ // Loop every 1 sec
+  if (millis() - last_loop > 150){ // max31855 sampling frequency of 10hz max
       last_loop = millis();
 
 
   // Take measurements
-  Tout = exit_thermistor.get_temperature();
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  Tin = sensors.getTempFByIndex(0);
-  Tout2 = sensors.getTempFByIndex(1);
+  //Tout = exit_thermistor.get_temperature();
+  Tin = 50; // guestimate in F
+  Tout2 = thermocouple.readFahrenheit();
 
   flowmeter.calc_flow_rate();
 
@@ -147,14 +171,15 @@ void loop(void) {
   Serial.print(" , Tin = ");
   Serial.print(Tin);
   Serial.print(" , Tout = ");
-  Serial.print(Tout);
-  Serial.print(" , Tout2 = ");
   Serial.println(Tout2);
+
+  Serial.print("Thermocouple read error: ");
+  Serial.println(thermocouple.readError());
   // ---------------------
 
 
 
-  if (safety_check(Tout) == true){
+  if (safety_check(Tout2) == true){
     if (flowmeter.flow_rate < 0.001){
         heater_one.set_power(0);
         heater_two.set_power(0);

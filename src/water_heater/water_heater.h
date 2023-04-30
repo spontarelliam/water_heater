@@ -23,7 +23,7 @@ public:
         {
             cloopTime = currentTime; // Updates cloopTime
             // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
-            Serial.println(flow_frequency);
+            //Serial.println(flow_frequency);
             l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
             flow_frequency = 0; // Reset Counter
             //Serial.print(l_hour, DEC); // Print litres/hour

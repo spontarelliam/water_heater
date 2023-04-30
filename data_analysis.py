@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import time
 import datetime
 
-time_limit = 200 # seconds
+time_limit = 12 # seconds
 
 
 device   = '/dev/ttyUSB0' # serial port
@@ -37,7 +37,7 @@ with serial.Serial(device,baud) as serialPort, open(filename,'w') as outFile:
 
         if "Time" in str(line[:7]):
             thetime = int(splitline[3][:-1])/1000
-            Tout = float(splitline[18])
+            Tout = float(splitline[18].replace("\\r\\n'", ""))
             flow = float(splitline[10])
             print(line)
             times.append(thetime)
@@ -61,7 +61,7 @@ ax1.set(xlabel='Time (s)', ylabel='Temperature (F)',
        title='Water Heater Temperature Plot. Kp=' + Kp +", Ki="+ Ki +", Kd="+ Kd + "\n flow="+str(avg_flow)+"gpm")
 ax1.grid()
 ax2.set_ylabel('PID Adjustment Factor', color='b')
-ax2.set_ylim(0,3.0)
+ax2.set_ylim(0.3,3.0)
 ax1.set_ylim(100,130)
 
 now = datetime.datetime.now()
