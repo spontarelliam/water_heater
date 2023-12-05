@@ -19,7 +19,7 @@ void flow () // Interrupt function
 
    void setup()
  {
-   pinMode(flowsensor, INPUT);
+   pinMode(flowsensor, INPUT_PULLUP);
    digitalWrite(flowsensor, HIGH); // Optional Internal Pull-Up
    Serial.begin(9600);
    attachInterrupt(0, flow, RISING); // Setup Interrupt
