@@ -16,7 +16,7 @@
 #define MAXCLK  8
 
 #define ONE_WIRE_BUS 4
-#define MAXTEMP 57 // 135F
+#define MAXTEMP 60 // 135F
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
@@ -37,11 +37,11 @@ double PID_adj = 1.0;
 float last_loop = 0;
 
 //Specify the links and initial tuning parameters
-//double Kp=5, Ki=0.1, Kd=30;
-//double Kp=.2, Ki=0.1, Kd=200;
-//double Kp=.1, Ki=5, Kd=200;
-//double Kp=8, Ki=10, Kd=1;
-double Kp=10, Ki=10, Kd=1;
+
+double Kp=10, Ki=5, Kd=1; // not sure why this is good
+//double Kp=.2, Ki=0.1, Kd=200; // used for months
+//double Kp=.1, Ki=0.1, Kd=500; // also good
+
 
 PID myPID(&Tout2, &PID_adj, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
 
@@ -59,7 +59,7 @@ void setup(void) {
   heater_three.set_pin(6);
   heater_four.set_pin(9);
 
-    delay(500);
+    delay(300);
   Serial.print("Initializing sensor...");
   if (!thermocouple.begin()) {
     Serial.println("ERROR.");
@@ -82,7 +82,7 @@ long ClassicalMethod(float T1, float T2){
     // 0.05 kg/s = 1 gpm
     float cp = 4180; // J / kg * K
     
-    float q = 0.05 * cp * (T2 - T1);
+    float q = 0.07 * cp * (T2 - T1);
     q = max(0, q);
     q = min(q, 20000);
 
@@ -127,7 +127,7 @@ void loop(void) {
 
   // Take measurements
   //Tout = exit_thermistor.get_temperature();
-  Tin = 10; // guestimate in C
+  Tin = 5; // guestimate in C
   Tout2 = thermocouple.readCelsius();
   Q = ClassicalMethod(Tin, TEMPSETPOINT);
   myPID.Compute();
@@ -135,7 +135,7 @@ void loop(void) {
 
   // power boost for first 3 sec
   if (millis() < 3000){
-    Q = min(Q * 1.5, 20000);
+    Q = min(Q * 2.0, 20000);
   }
 
   // -- Debug printout --
