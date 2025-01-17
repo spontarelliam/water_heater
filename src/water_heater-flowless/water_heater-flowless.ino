@@ -28,7 +28,7 @@ DallasTemperature sensors(&oneWire);
 Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
 
 //double TEMPSETPOINT = 41.1; // 41=106F
-double TEMPSETPOINT = 44; // winter target
+double TEMPSETPOINT = 49; // winter target
 double Tin;
 double Tout2; // thermocouple
 unsigned long lastTime;
@@ -38,8 +38,11 @@ float last_loop = 0;
 
 //Specify the links and initial tuning parameters
 //double Kp=5, Ki=0.1, Kd=30;
-double Kp=.2, Ki=0.1, Kd=200;
+//double Kp=.2, Ki=0.1, Kd=200;
 //double Kp=.1, Ki=5, Kd=200;
+//double Kp=8, Ki=10, Kd=1;
+double Kp=10, Ki=10, Kd=1;
+
 PID myPID(&Tout2, &PID_adj, &TEMPSETPOINT, Kp, Ki, Kd, DIRECT);
 
 Heater heater_one;
